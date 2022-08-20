@@ -49,6 +49,8 @@ class NetCat:
             print('Operacja przerwana przez uzytkownika')
             self.socket.close()
             sys.exit()
+
+    #Dodanie funckji nasuchiwania polaczenia
     def listen(self):
         print(f'nasluchiwanie na adresie: {self.args.target} i porcie: {self.args.port}')
         self.socket.bind((self.args.target, self.args.port))
@@ -57,10 +59,14 @@ class NetCat:
             client_socket, _ =self.socket.accept()
             client_thread = threading.Thread(target=self.handle, args=(client_socket,))
             client_thread.start()
+
+    # Dodanie interakcji z serwerem
     def handle(self,client_socket):
+        # Obsluga arguemntu -e do wykonywania komend
         if self.args.execute:
             output= execute(self.args.execute)
             client_socket.send(output.encode())
+        # Obsluga arguemntu -u do zaladowywania plikow
         elif self.args.upload:
             file_buffer = b''
             while True:
@@ -73,6 +79,7 @@ class NetCat:
                 f.write(file_buffer)
             message = f'Zapisano plik {self.args.upload}'
             client_socket.send(message.encode())
+        # Obsluga arguemntu -c do otwarcia powloki systemowej
         elif self.args.command:
             cmd_buffer = b''
             while True:
@@ -89,8 +96,9 @@ class NetCat:
                     self.socket.close()
                     sys.exit()
 
-
+#poczatek dzialania programu
 if __name__ == '__main__':
+    #tworznie interfejsu i manuala
     parser = argparse.ArgumentParser(description='Narzednie SIS', formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=textwrap.dedent('''Przykady:
         netcat.py -t 192.168.1.108 -p 5555 -l -c #Powloka systemu
@@ -100,12 +108,15 @@ if __name__ == '__main__':
         echo 'ABCDEFGHI'| ./netcat.py -t 192.168.1.108 -p 135 #wysylanie tekstu do serwera na port 135
 
         netcat.py 192.168.1.108 -p 5555 #polaczenie z serwerem '''))
+    #dodanie paramterow do programu
     parser.add_argument('-c', '--command', action='store_true', help='otwarcie powloki')
     parser.add_argument('-e', '--execute', help='wykonywanie polecenia')
     parser.add_argument('-l', '--listen', action='store_true', help='nasluchiwanie polaczenia')
     parser.add_argument('-p', '--port', type=int, default=5555, help='port docelowy')
     parser.add_argument('-t', '--target', default='192.168.1.203', help='adres docelowy (IPV4)')
     parser.add_argument('-u', '--upload', help='zaladowanie pliku')
+
+    #przekazanie parametrow do zmiennej args
     args = parser.parse_args()
     if args.listen:
         buffer = ''
